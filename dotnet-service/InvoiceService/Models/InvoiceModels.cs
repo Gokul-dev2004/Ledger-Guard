@@ -40,9 +40,9 @@ public class InvoiceResponse
     public string InvoiceNumber { get; set; } = string.Empty;
     public bool IsInterState { get; set; }
     public List<InvoiceLineResult> Lines { get; set; } = new();
-    public decimal Subtotal { get; set; }         // discount-ku munnadi
+    public decimal Subtotal { get; set; }         
     public decimal TotalDiscount { get; set; }
-    public decimal TaxableAmount { get; set; }    // Subtotal - Discount
+    public decimal TaxableAmount { get; set; }    
     public decimal TotalCgst { get; set; }
     public decimal TotalSgst { get; set; }
     public decimal TotalIgst { get; set; }

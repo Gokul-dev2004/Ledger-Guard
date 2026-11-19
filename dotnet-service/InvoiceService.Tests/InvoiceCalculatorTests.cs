@@ -75,7 +75,6 @@ public class InvoiceCalculatorTests
     [Fact]
     public void OddTax_CgstPlusSgstEqualsTax()
     {
-        // 1 x 10.10 @ 5% => tax 0.505 -> 0.51 ; CGST+SGST must equal 0.51 exactly
         var req = new InvoiceRequest
         {
             InvoiceNumber = "INV-002",

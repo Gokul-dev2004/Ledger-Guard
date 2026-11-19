@@ -9,14 +9,13 @@ public interface IInvoiceCalculator
 
 public class InvoiceCalculator : IInvoiceCalculator
 {
-    // Money-ya 2 decimal-ku round pannum (0.005 -> 0.01)
+    
     private static decimal R(decimal v) =>
         Math.Round(v, 2, MidpointRounding.AwayFromZero);
 
     public InvoiceResponse Calculate(InvoiceRequest request)
     {
-        // Seller state = Buyer state -> CGST + SGST
-        // Different state            -> IGST
+        
         var isInterState = !string.Equals(
             request.SellerStateCode, request.BuyerStateCode,
             StringComparison.OrdinalIgnoreCase);
@@ -42,7 +41,7 @@ public class InvoiceCalculator : IInvoiceCalculator
             else
             {
                 cgst = R(tax / 2m);
-                sgst = tax - cgst;   // paisa mismatch varama irukka
+                sgst = tax - cgst;   
             }
 
             response.Lines.Add(new InvoiceLineResult
@@ -69,7 +68,7 @@ public class InvoiceCalculator : IInvoiceCalculator
         response.TotalIgst = response.Lines.Sum(l => l.Igst);
         response.TotalTax = response.TotalCgst + response.TotalSgst + response.TotalIgst;
 
-        // Final total-a nearest rupee-ku round pannum
+      
         var exact = response.TaxableAmount + response.TotalTax;
         var rounded = Math.Round(exact, 0, MidpointRounding.AwayFromZero);
         response.RoundOff = rounded - exact;

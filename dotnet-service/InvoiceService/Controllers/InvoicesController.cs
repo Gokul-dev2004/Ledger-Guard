@@ -23,7 +23,7 @@ public class InvoicesController : ControllerBase
         _validator = validator;
     }
 
-    // POST /api/invoices/validate -> data correct-a nu mattum check
+   
     [HttpPost("validate")]
     public async Task<IActionResult> Validate(InvoiceRequest request)
     {
@@ -35,7 +35,7 @@ public class InvoicesController : ControllerBase
         });
     }
 
-    // POST /api/invoices/calculate -> subtotal, GST, total return pannum
+    
     [HttpPost("calculate")]
     public async Task<IActionResult> Calculate(InvoiceRequest request)
     {
@@ -51,7 +51,7 @@ public class InvoicesController : ControllerBase
         return Ok(_calculator.Calculate(request));
     }
 
-    // POST /api/invoices/pdf -> invoice PDF download
+   
     [HttpPost("pdf")]
     public async Task<IActionResult> GeneratePdf(InvoiceRequest request)
     {

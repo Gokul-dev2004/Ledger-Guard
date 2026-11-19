@@ -4,8 +4,7 @@ using QuestPDF.Helpers;
 
 namespace InvoiceService.Services;
 
-// Encryption design team decide pannina appram, idha implement pannalaam.
-// Ippo NoOp = PDF-a maathaama appadiye tharum.
+
 public interface IPdfProtector
 {
     byte[] Protect(byte[] pdfBytes);
@@ -52,7 +51,7 @@ public class InvoicePdfGenerator : IInvoicePdfGenerator
                         ? "Supply type: Inter-state (IGST)"
                         : "Supply type: Intra-state (CGST + SGST)");
 
-                    // Items table
+                    
                     col.Item().PaddingTop(10).Table(t =>
                     {
                         t.ColumnsDefinition(c =>
@@ -86,7 +85,7 @@ public class InvoicePdfGenerator : IInvoicePdfGenerator
                         }
                     });
 
-                    // Totals
+                   
                     col.Item().PaddingTop(15).AlignRight().Column(s =>
                     {
                         s.Item().Text($"Subtotal: {res.Subtotal:N2}");

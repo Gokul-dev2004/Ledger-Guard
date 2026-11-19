@@ -5,7 +5,7 @@ namespace InvoiceService.Validators;
 
 public class InvoiceItemValidator : AbstractValidator<InvoiceItemRequest>
 {
-    // India-la allowed GST slabs
+    
     private static readonly decimal[] AllowedGstRates = { 0m, 5m, 12m, 18m, 28m };
 
     public InvoiceItemValidator()
