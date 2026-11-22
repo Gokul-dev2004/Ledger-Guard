@@ -171,6 +171,7 @@ export const forgotPassword = async (req, res) => {
 
         user.resetOTP = hashedOTP;
         user.resetOTPExpiry = Date.now() + 5 * 60 * 1000;
+        user.resetOTPAttempts = 0;
 
         await user.save();
 
@@ -233,9 +234,14 @@ export const verifyOTP = async (req, res) => {
 
         // Check OTP expiry
         if (user.resetOTPExpiry.getTime() < Date.now()) {
+            user.resetOTP = undefined;
+            user.resetOTPExpiry = undefined;
+            user.resetOTPAttempts = 0;
+            await user.save();
+
             return res.status(400).json({
                 success: false,
-                message: 'OTP has expired'
+                message: 'OTP has expired. Please request a new OTP.'
             });
         }
 
@@ -247,12 +253,32 @@ export const verifyOTP = async (req, res) => {
 
         // Compare OTP
         if (hashedOTP !== user.resetOTP) {
+            user.resetOTPAttempts = (user.resetOTPAttempts || 0) + 1;
+
+            if (user.resetOTPAttempts >= 5) {
+                user.resetOTP = undefined;
+                user.resetOTPExpiry = undefined;
+                user.resetOTPAttempts = 0;
+                await user.save();
+
+                return res.status(400).json({
+                    success: false,
+                    message: 'Too many invalid OTP attempts. Please request a new OTP.'
+                });
+            }
+
+            await user.save();
+
             return res.status(400).json({
                 success: false,
-                message: 'Invalid OTP'
+                message: `Invalid OTP. ${5 - user.resetOTPAttempts} attempts remaining.`
             });
         }
 
+        // Correct OTP - reset attempts
+        user.resetOTPAttempts = 0;
+
+        // Generate reset token
         const resetToken = crypto.randomBytes(32).toString('hex');
 
         user.resetToken = crypto
@@ -262,6 +288,7 @@ export const verifyOTP = async (req, res) => {
 
         user.resetTokenExpiry = Date.now() + 10 * 60 * 1000;
 
+        // Clear OTP after successful verification
         user.resetOTP = undefined;
         user.resetOTPExpiry = undefined;
 
@@ -274,6 +301,8 @@ export const verifyOTP = async (req, res) => {
         });
 
     } catch (error) {
+        console.error('OTP verification error:', error);
+
         return res.status(500).json({
             success: false,
             message: 'OTP verification failed'
@@ -281,58 +310,63 @@ export const verifyOTP = async (req, res) => {
     }
 };
 
-
 export const resetPassword = async (req, res) => {
-  try {
-    const { resetToken, newPassword } = req.body;
+    try {
+        const { resetToken, newPassword } = req.body;
 
-    if (!resetToken || !newPassword) {
-      return res.status(400).json({
-        success: false,
-        message: 'Reset token and new password are required'
-      });
+        if (!resetToken || !newPassword) {
+            return res.status(400).json({
+                success: false,
+                message: 'Reset token and new password are required'
+            });
+        }
+
+        if (newPassword.length < 8) {
+            return res.status(400).json({
+                success: false,
+                message: 'Password must be at least 8 characters long'
+            });
+        }
+
+        // Hash reset token
+        const hashedToken = crypto
+            .createHash('sha256')
+            .update(resetToken)
+            .digest('hex');
+
+        // Find user with valid reset token
+        const user = await User.findOne({
+            resetToken: hashedToken,
+            resetTokenExpiry: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid or expired reset token'
+            });
+        }
+
+        // Hash new password
+        user.password = await bcrypt.hash(newPassword, 10);
+
+        // Clear reset token
+        user.resetToken = undefined;
+        user.resetTokenExpiry = undefined;
+
+        await user.save();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Password reset successfully'
+        });
+
+    } catch (error) {
+        console.error('Password reset error:', error);
+
+        return res.status(500).json({
+            success: false,
+            message: 'Password reset failed'
+        });
     }
-
-    if (newPassword.length < 8) {
-      return res.status(400).json({
-        success: false,
-        message: 'Password must be at least 8 characters'
-      });
-    }
-
-    const hashedToken = crypto
-      .createHash('sha256')
-      .update(resetToken)
-      .digest('hex');
-
-    const user = await User.findOne({
-      resetToken: hashedToken,
-      resetTokenExpiry: { $gt: Date.now() }
-    });
-
-    if (!user) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid or expired reset token'
-      });
-    }
-
-    user.password = await bcrypt.hash(newPassword, 10);
-
-    user.resetToken = undefined;
-    user.resetTokenExpiry = undefined;
-
-    await user.save();
-
-    return res.status(200).json({
-      success: true,
-      message: 'Password reset successfully'
-    });
-
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Password reset failed'
-    });
-  }
 };
