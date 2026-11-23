@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import { type } from 'os';
 
 const userSchema = new mongoose.Schema(
   {
@@ -34,6 +33,11 @@ const userSchema = new mongoose.Schema(
 
     resetOTPExpiry: {
         type: Date
+    },
+
+    resetOTPAttempts: {
+      type: Number,
+      default: 0
     },
 
     resetToken: {
