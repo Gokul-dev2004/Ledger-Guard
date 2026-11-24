@@ -13,14 +13,18 @@ public class InvoicesController : ControllerBase
     private readonly IInvoicePdfGenerator _pdf;
     private readonly IValidator<InvoiceRequest> _validator;
 
+    private readonly IPdfProtector _protector;
+
     public InvoicesController(
         IInvoiceCalculator calculator,
         IInvoicePdfGenerator pdf,
-        IValidator<InvoiceRequest> validator)
+        IValidator<InvoiceRequest> validator,
+        IPdfProtector protector)
     {
         _calculator = calculator;
         _pdf = pdf;
         _validator = validator;
+        _protector = protector;
     }
 
    
@@ -65,7 +69,18 @@ public class InvoicesController : ControllerBase
         }
 
         var result = _calculator.Calculate(request);
-        var bytes = _pdf.Generate(request, result);
-        return File(bytes, "application/pdf", $"invoice-{request.InvoiceNumber}.pdf");
+        var bytes = await _pdf.GenerateAsync(request, result);
+
+        return _protector.IsEncrypted
+            ? File(bytes, "application/octet-stream", $"invoice-{request.InvoiceNumber}.pdf.enc")
+            : File(bytes, "application/pdf", $"invoice-{request.InvoiceNumber}.pdf");
+    }
+    [HttpPost("pdf/decrypt")]
+    public async Task<IActionResult> DecryptPdf(IFormFile file)
+    {
+        using var ms = new MemoryStream();
+        await file.CopyToAsync(ms);
+        var plain = await _protector.UnprotectAsync(ms.ToArray());
+        return File(plain, "application/pdf", "invoice.pdf");
     }
 }

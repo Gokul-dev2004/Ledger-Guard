@@ -7,17 +7,21 @@ namespace InvoiceService.Services;
 
 public interface IPdfProtector
 {
-    byte[] Protect(byte[] pdfBytes);
+    bool IsEncrypted { get; }
+    Task<byte[]> ProtectAsync(byte[] pdfBytes);
+    Task<byte[]> UnprotectAsync(byte[] protectedBytes);
 }
 
 public class NoOpPdfProtector : IPdfProtector
 {
-    public byte[] Protect(byte[] pdfBytes) => pdfBytes;
+    public bool IsEncrypted => false;
+    public Task<byte[]> ProtectAsync(byte[] pdfBytes) => Task.FromResult(pdfBytes);
+    public Task<byte[]> UnprotectAsync(byte[] protectedBytes) => Task.FromResult(protectedBytes);
 }
 
 public interface IInvoicePdfGenerator
 {
-    byte[] Generate(InvoiceRequest request, InvoiceResponse result);
+    Task<byte[]> GenerateAsync(InvoiceRequest request, InvoiceResponse result);
 }
 
 public class InvoicePdfGenerator : IInvoicePdfGenerator
@@ -29,7 +33,7 @@ public class InvoicePdfGenerator : IInvoicePdfGenerator
         _protector = protector;
     }
 
-    public byte[] Generate(InvoiceRequest req, InvoiceResponse res)
+    public async Task<byte[]> GenerateAsync(InvoiceRequest req, InvoiceResponse res)
     {
         var bytes = Document.Create(container =>
         {
@@ -108,6 +112,6 @@ public class InvoicePdfGenerator : IInvoicePdfGenerator
             });
         }).GeneratePdf();
 
-        return _protector.Protect(bytes);
+        return await _protector.ProtectAsync(bytes);
     }
 }

@@ -11,3 +11,7 @@ __pycache__/
 venv/
 *.log
 .DS_Store
+
+dotnet-service/**/*.enc
+dotnet-service/**/decrypted.pdf
+dotnet-service/**/invoice-test.pdf

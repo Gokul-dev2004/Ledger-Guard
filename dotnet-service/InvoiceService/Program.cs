@@ -23,8 +23,23 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddValidatorsFromAssemblyContaining<InvoiceRequestValidator>();
 builder.Services.AddScoped<IInvoiceCalculator, InvoiceCalculator>();
-builder.Services.AddSingleton<IPdfProtector, NoOpPdfProtector>();
-builder.Services.AddScoped<IInvoicePdfGenerator, InvoicePdfGenerator>();
+if (!string.IsNullOrEmpty(builder.Configuration["KMS_KEY_ID"]))
+{
+    // Production: AWS KMS
+    builder.Services.AddSingleton<Amazon.KeyManagementService.IAmazonKeyManagementService>(
+        _ => new Amazon.KeyManagementService.AmazonKeyManagementServiceClient());
+    builder.Services.AddSingleton<IPdfProtector, KmsPdfProtector>();
+}
+else if (builder.Environment.IsDevelopment()
+         && !string.IsNullOrEmpty(builder.Configuration["LOCAL_DEV_ENC_KEY"]))
+{
+    // Local testing only
+    builder.Services.AddSingleton<IPdfProtector, LocalAesPdfProtector>();
+}
+else
+{
+    builder.Services.AddSingleton<IPdfProtector, NoOpPdfProtector>();
+}builder.Services.AddScoped<IInvoicePdfGenerator, InvoicePdfGenerator>();
 
 var app = builder.Build();
 

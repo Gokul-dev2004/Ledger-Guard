@@ -1,0 +1,12 @@
+
+{
+  "invoiceNumber": "INV-001",
+  "invoiceDate": "2026-11-17",
+  "customerName": "Company A",
+  "sellerStateCode": "33",
+  "buyerStateCode": "33",
+  "items": [
+    { "description": "Laptop Stand", "quantity": 2, "unitPrice": 1000, "discountPercent": 10, "gstRate": 18 },
+    { "description": "Cable", "quantity": 1, "unitPrice": 500, "discountPercent": 0, "gstRate": 5 }
+  ]
+}
